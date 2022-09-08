@@ -16,7 +16,7 @@
 
 namespace undo {
 
-UndoHistory::UndoHistory(UndoHistoryDelegate* delegate)
+UndoHistory::UndoHistory(std::shared_ptr<UndoHistoryDelegate> delegate)
   : m_delegate(delegate)
   , m_first(nullptr)
   , m_last(nullptr)
@@ -63,13 +63,6 @@ void UndoHistory::redo()
 
 void UndoHistory::clearRedo()
 {
-  for (UndoState* state = m_last, *prev = nullptr;
-       state && state != m_cur;
-       state = prev) {
-    prev = state->m_prev;
-    deleteState(state);
-  }
-
   if (m_cur) {
     m_cur->m_next = nullptr;
     m_last = m_cur;
@@ -89,14 +82,14 @@ bool UndoHistory::deleteFirstState()
     return false;
   }
 
-  UndoState* i = m_last;
+  std::shared_ptr<UndoState> i = m_last;
   while (i) {
     // If this state depends on the delete one, this "i" is the new
     // m_first undo state.
     if (i->m_parent == m_first) {
       // First we check if the current undo state is one of the states
       // that we're going to delete.
-      UndoState* j = m_first;
+        std::shared_ptr<UndoState> j = m_first;
       while (j != i) {
         // Cannot delete this "j" state because is the current one.
         if (m_cur == j) {
@@ -110,7 +103,7 @@ bool UndoHistory::deleteFirstState()
       while (j != i) {
         UNDO_TRACE(" - Delete undo state\n");
 
-        UndoState* k = j;
+        std::shared_ptr<UndoState> k = j;
         j = j->next();
 
         deleteState(k);
@@ -118,13 +111,14 @@ bool UndoHistory::deleteFirstState()
 
       i->m_prev = nullptr;
       i->m_parent = nullptr;
-      m_first = i;
+      std::shared_ptr<UndoState> temp(i);
+      m_first = temp;
       return true;
     }
     i = i->prev();
   }
 
-  UndoState* state = m_first;
+  std::shared_ptr<UndoState> state = m_first;
   assert(m_last == m_first);
   assert(m_first->next() == nullptr);
   m_first = m_last = nullptr;
@@ -134,9 +128,9 @@ bool UndoHistory::deleteFirstState()
   return true;
 }
 
-void UndoHistory::add(UndoCommand* cmd)
+void UndoHistory::add(std::shared_ptr<UndoCommand> cmd)
 {
-  UndoState* state = new UndoState(cmd);
+  std::shared_ptr<UndoState> state = std::make_shared<UndoState>(cmd);
   state->m_prev = m_last;
   state->m_next = nullptr;
   state->m_parent = m_cur;
@@ -152,11 +146,12 @@ void UndoHistory::add(UndoCommand* cmd)
   }
 }
 
-const UndoState* UndoHistory::findCommonParent(const UndoState* a,
-                                               const UndoState* b)
+
+std::shared_ptr<UndoState> UndoHistory::findCommonParent(
+    const std::shared_ptr<UndoState> a, const std::shared_ptr<UndoState> b)
 {
-  const UndoState* pA = a;
-  const UndoState* pB = b;
+  std::shared_ptr<UndoState> pA = a;
+  std::shared_ptr<UndoState> pB = b;
 
   if (pA == nullptr || pB == nullptr)
     return nullptr;
@@ -174,9 +169,9 @@ const UndoState* UndoHistory::findCommonParent(const UndoState* a,
   return pA;
 }
 
-void UndoHistory::moveTo(const UndoState* new_state)
+void UndoHistory::moveTo(const std::shared_ptr<UndoState> new_state)
 {
-  const UndoState* common = findCommonParent(m_cur, new_state);
+    std::shared_ptr<UndoState> common = findCommonParent(m_cur, new_state);
 
   if (m_cur) {
     while (m_cur != common) {
@@ -186,30 +181,28 @@ void UndoHistory::moveTo(const UndoState* new_state)
   }
 
   if (new_state) {
-    std::stack<const UndoState*> redo_parents;
-    const UndoState* p = new_state;
+    std::stack<std::shared_ptr<UndoState>> redoParents;
+    std::shared_ptr<UndoState> p = new_state;
     while (p != common) {
-      redo_parents.push(p);
+        redoParents.push(p);
       p = p->m_parent;
     }
 
-    while (!redo_parents.empty()) {
-      p = redo_parents.top();
-      redo_parents.pop();
+    while (!redoParents.empty()) {
+      p = redoParents.top();
+      redoParents.pop();
 
       p->m_cmd->redo();
     }
   }
 
-  m_cur = const_cast<UndoState*>(new_state);
+  m_cur = new_state;
 }
 
-void UndoHistory::deleteState(UndoState* state)
+void UndoHistory::deleteState(std::shared_ptr<UndoState> state)
 {
   if (m_delegate)
     m_delegate->onDeleteUndoState(state);
-
-  delete state;
 }
 
 } // namespace undo

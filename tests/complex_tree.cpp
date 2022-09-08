@@ -17,27 +17,27 @@ int main(int argc, char** argv)
   //       |              |
   //        ------------- 5 --- 6
   int model = 0;
-  Cmd cmd1(model, 1, 0);
-  Cmd cmd2(model, 2, 1);
-  Cmd cmd3(model, 3, 2);
-  Cmd cmd4(model, 4, 3);
-  Cmd cmd5(model, 5, 2);
-  Cmd cmd6(model, 6, 5);
-  Cmd cmd7(model, 7, 5);
-  Cmd cmd8(model, 8, 7);
+  std::shared_ptr<Cmd> cmd1 = std::make_shared<Cmd>(model, 1, 0);
+  std::shared_ptr<Cmd> cmd2 = std::make_shared<Cmd>(model, 2, 1);
+  std::shared_ptr<Cmd> cmd3 = std::make_shared<Cmd>(model, 3, 2);
+  std::shared_ptr<Cmd> cmd4 = std::make_shared<Cmd>(model, 4, 3);
+  std::shared_ptr<Cmd> cmd5 = std::make_shared<Cmd>(model, 5, 2);
+  std::shared_ptr<Cmd> cmd6 = std::make_shared<Cmd>(model, 6, 5);
+  std::shared_ptr<Cmd> cmd7 = std::make_shared<Cmd>(model, 7, 5);
+  std::shared_ptr<Cmd> cmd8 = std::make_shared<Cmd>(model, 8, 7);
 
   UndoHistory history;
-  cmd1.redo(); history.add(&cmd1);
-  cmd2.redo(); history.add(&cmd2);
-  cmd3.redo(); history.add(&cmd3);
-  cmd4.redo(); history.add(&cmd4);
+  cmd1->redo(); history.add(cmd1);
+  cmd2->redo(); history.add(cmd2);
+  cmd3->redo(); history.add(cmd3);
+  cmd4->redo(); history.add(cmd4);
   history.undo();
   history.undo();
-  cmd5.redo(); history.add(&cmd5);
-  cmd6.redo(); history.add(&cmd6);
+  cmd5->redo(); history.add(cmd5);
+  cmd6->redo(); history.add(cmd6);
   history.undo();
-  cmd7.redo(); history.add(&cmd7);
-  cmd8.redo(); history.add(&cmd8);
+  cmd7->redo(); history.add(cmd7);
+  cmd8->redo(); history.add(cmd8);
 
   EXPECT_EQ(8, model);
   history.undo(); EXPECT_EQ(7, model);
