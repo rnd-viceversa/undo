@@ -10,6 +10,8 @@
 
 #include "undo_command.h"
 
+#include <memory>
+
 namespace undo {
 
   class UndoCommand;
@@ -20,7 +22,7 @@ namespace undo {
   class UndoState {
     friend class UndoHistory;
   public:
-    UndoState(UndoCommand* cmd)
+    UndoState(std::shared_ptr<UndoCommand> cmd)
       : m_prev(nullptr)
       , m_next(nullptr)
       , m_parent(nullptr)
@@ -28,8 +30,8 @@ namespace undo {
     }
 
     ~UndoState() {
-      if (m_cmd)
-        m_cmd->dispose();
+      //if (m_cmd)
+      //  m_cmd->dispose();
 
 #ifdef _DEBUG
       m_prev = nullptr;
@@ -39,14 +41,14 @@ namespace undo {
 #endif
     }
 
-    UndoState* prev() const { return m_prev; }
-    UndoState* next() const { return m_next; }
-    UndoCommand* cmd() const { return m_cmd; }
+    std::shared_ptr<UndoState> prev() const { return m_prev; }
+    std::shared_ptr<UndoState> next() const { return m_next; }
+    std::shared_ptr<UndoCommand> cmd() const { return m_cmd; }
   private:
-    UndoState* m_prev;
-    UndoState* m_next;
-    UndoState* m_parent;             // Parent state, after we undo
-    UndoCommand* m_cmd;
+    std::shared_ptr<UndoState> m_prev;
+    std::shared_ptr<UndoState> m_next;
+    std::shared_ptr<UndoState> m_parent; // Parent state, after we undo
+    std::shared_ptr<UndoCommand> m_cmd;
   };
 
 } // namespace undo

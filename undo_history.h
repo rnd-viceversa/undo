@@ -8,6 +8,8 @@
 #define UNDO_HISTORY_H_INCLUDED
 #pragma once
 
+#include <memory>
+
 namespace undo {
 
   class UndoCommand;
@@ -16,19 +18,19 @@ namespace undo {
   class UndoHistoryDelegate {
   public:
     virtual ~UndoHistoryDelegate() { }
-    virtual void onDeleteUndoState(UndoState* state) { }
+    virtual void onDeleteUndoState(std::shared_ptr<UndoState> state) { }
   };
 
   class UndoHistory {
   public:
-    UndoHistory(UndoHistoryDelegate* delegate = nullptr);
+    UndoHistory(std::shared_ptr<UndoHistoryDelegate> delegate = nullptr);
     virtual ~UndoHistory();
 
-    const UndoState* firstState()   const { return m_first; }
-    const UndoState* lastState()    const { return m_last; }
-    const UndoState* currentState() const { return m_cur; }
+    const std::shared_ptr<UndoState> firstState()   const { return m_first; }
+    const std::shared_ptr<UndoState> lastState()    const { return m_last; }
+    const std::shared_ptr<UndoState> currentState() const { return m_cur; }
 
-    void add(UndoCommand* cmd);
+    void add(std::shared_ptr<UndoCommand> cmd);
     bool canUndo() const;
     bool canRedo() const;
     void undo();
@@ -44,17 +46,17 @@ namespace undo {
 
     // This can be used to jump to a specific UndoState in the whole
     // history.
-    void moveTo(const UndoState* new_state);
+    void moveTo(const std::shared_ptr<UndoState> new_state);
 
   private:
-    const UndoState* findCommonParent(const UndoState* a,
-                                      const UndoState* b);
-    void deleteState(UndoState* state);
+    static std::shared_ptr<UndoState> findCommonParent(
+        const std::shared_ptr<UndoState> a, const std::shared_ptr<UndoState> b);
+    void deleteState(std::shared_ptr<UndoState> state);
 
-    UndoHistoryDelegate* m_delegate;
-    UndoState* m_first;
-    UndoState* m_last;
-    UndoState* m_cur;          // Current action that can be undone
+    std::shared_ptr<UndoHistoryDelegate> m_delegate;
+    std::shared_ptr<UndoState> m_first;
+    std::shared_ptr<UndoState> m_last;
+    std::shared_ptr<UndoState> m_cur; // Current action that can be undone
   };
 
 } // namespace undo
